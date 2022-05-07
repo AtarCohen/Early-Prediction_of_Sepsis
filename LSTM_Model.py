@@ -24,7 +24,6 @@ class RNN_Model(nn.Module):
                                  num_layers=num_layers, dropout = dropout)
         # The linear layer that maps from hidden state space to tag space
         self.output = nn.Linear(hidden_dim * 2 if bidirectional else hidden_dim, 2)
-        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, rnn_inputs,lengths, mask):
         outputs=[]
@@ -40,7 +39,7 @@ class RNN_Model(nn.Module):
         # flat_X = torch.cat([unpacked_ltsm_out[i, :lengths[i], :] for i in range(len(lengths))])
         # unpacked_rnn_out = self.dropout(unpacked_rnn_out)
         # rnn_output = self.dropout(rnn_output)
-        return  self.softmax(self.output(last_out))
+        return  self.output(last_out)
 
 
 
