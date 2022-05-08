@@ -14,5 +14,6 @@ dependencies:
       - plotly== #TODO
       - imblearn== #TODO
       - wandb==#TODO
+      - statsmodels== #TODO??
 
 
