@@ -12,18 +12,25 @@ import logging
 import itertools
 import pandas as pd
 from LSTM_Model import RNN_Model, Dataset, collate_inputs
+from imblearn.over_sampling import RandomOverSampler
+from imblearn.under_sampling import RandomUnderSampler
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer,SimpleImputer
+
+#%%
+
 
 logger = logging.getLogger(__name__)
 Imputations = {}
-FREQUENCY_ATTR = [ f'{5}w_sum_{at}' for at in ['BaseExcess',  'FiO2', 'pH', 'PaCO2', 'Glucose','Lactate', 'PTT']]
+FREQUENCY_ATTR =['5w_sum_BaseExcess', '5w_sum_FiO2', '5w_sum_pH', '5w_sum_PaCO2', '5w_sum_Glucose', '5w_sum_Lactate', '5w_sum_PTT']
 LAB_ATTR = [ 'Hct',  'Glucose','Potassium']
 CONST_ATTR = ['ID','max_ICULOS','Gender']
-OTHER_ATTR = ['time_bm','HR','MAP','O2Sat', 'Resp','SBP','ICULOS']
+OTHER_ATTR = ['HR','MAP','O2Sat', 'Resp','SBP','ICULOS']
 LABEL_ATTR= 'Label'
-COLS = FREQUENCY_ATTR+LAB_ATTR+OTHER_ATTR
-TRAIN_PATH = 'filtered_train_df_0705.csv'
-VAL_PATH = 'filtered_val_df_0705.csv'
-TEST_PATH = 'filtered_test_df_0705.csv'
+COLS = FREQUENCY_ATTR+CONST_ATTR+LAB_ATTR+OTHER_ATTR
+TRAIN_PATH = 'filtered_train_df_0705_LSTM.csv'
+VAL_PATH = 'filtered_val_df_0705_LSTM.csv'
+TEST_PATH = 'filtered_test_df_0705_LSTM.csv'
 
 
 
@@ -50,10 +57,10 @@ def parsing():
     parser.add_argument('--lr', default=0.05, type=float)
     parser.add_argument('--num_epochs', default=1, type=int)
 
-    parser.add_argument('--imputation', choices=['iterative','mean','median'], default='iterative', type=str)
+    # parser.add_argument('--imputation', choices=['iterative','mean','median'], default='iterative', type=str)
     parser.add_argument('--window', default=5, type=int)
     parser.add_argument('--seq_len', default=10, type=int)
-    parser.add_argument('--sampling', choices=['over','under'], default='iterative', type=str)
+    parser.add_argument('--sampling', choices=['over','under','overunder'], default='overunder', type=str)
 
     args = parser.parse_args()
     assert 0 <= args.dropout <= 1
@@ -66,48 +73,43 @@ def set_seed(seed=42):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
 
-def add_rolling_window(df, attr, window_size):
-    df = df.sort_values(by=['ID','ICULOS'], ascending =[True,True])
-    rolling = df[['ID']+attr].groupby('ID').rolling(window=window_size, closed='both').count()
-    rolling= rolling.rename(columns={at: f'{window_size}w_sum_{at}' for at in attr})
-    rolling=rolling[list(rolling.columns)[1:]].reset_index().set_index('level_1')
-    combined = df.join(rolling,how='left', rsuffix= 'r')
-    return combined
+# def prepare_data(df,args,type):
+#     df = df[df['time_bm']>=-1*(args.seq_len+args.window)]
+#     df = add_rolling_window(df, FREQUENCY_ATTR, args.window)
+#     df = df[df['time_bm']>=-1*(args.seq_len)]
+#     if type=='train':
+#         patient_ids = sample(df, args)
+#     else:
+#         patient_ids = list(set(df.ID.values))
+#     df= df[COLS]
+#     df = impute_per_patient(df,args)
+#     return df, patient_ids
 
-
-def prepare_data(df,args):
-    df = df[df['time_bm']>=-1*(args.seq_len+args.window)]
-    df = add_rolling_window(df, FREQUENCY_ATTR, args.window)
-    df = df[df['time_bm']>=-1*(args.seq_len)]
-    return df
-
-def impute_per_patient(df,args):
-
-
-def impute_and_sample(df,args):
-    if args.sampling=='under':
-
-
-
-
-
+def sample(df,args):
+    df = df[['ID', 'Label']].groupby(by='ID').max().reset_index()
+    ids = df[['ID']]
+    labels = df['Label']
+    if 'over' in args.sample:
+        over = RandomOverSampler(sampling_strategy=0.3)
+        ids,labels = over.fit_resample(ids,labels)
+    if 'under' in args.sample:
+        under = RandomUnderSampler(sampling_strategy=0.5)
+        ids,labels = under.fit_resample(ids,labels)
+    return ids
 
 args = parsing()
 set_seed()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-full_df = pd.read_csv('/home/student/filtered_train_data_combined.csv')
-max_los = full_df[['ID','ICULOS']].groupby(by='ID').max().rename(columns={'ICULOS':'Max_ICULOS'})
-full_df=full_df.join(max_los,on='ID',how='left')
-full_df['time_bm'] =  full_df['ICULOS']-full_df['Max_ICULOS']
-full_df = full_df[full_df['time_bm']>=-10]
-full_df = full_df.fillna(-1)
 # TODO - Load DataFrames for train, validation, test and create Datasets. Train model
-ds_train = Dataset(full_df[(full_df['ID']==1)|(full_df['ID']==2)][:-2])
+train_df = pd.read_csv(TRAIN_PATH)
+train_patients= sample(train_df, args)
+input_dim = train_df.shape[1]-1
+ds_train = Dataset(train_patients,train_df)
 dl_train = DataLoader(ds_train, batch_size=args.batch_size, collate_fn=collate_inputs, shuffle=True)
-ds_val = Dataset(full_df[(full_df['ID']==1)|(full_df['ID']==2)][:-2])
+val_df = pd.read_csv(VAL_PATH)
+val_patients= list(set(val_df.ID.values))
+ds_val = Dataset(val_patients,val_df)
 dl_val = DataLoader(ds_val, batch_size=args.batch_size, collate_fn=collate_inputs)
-model = RNN_Model(rnn_type=args.time_series_model,input_dim = INPUT_DIM,hidden_dim = args.hidden_dim,dropout= args.dropout,num_layers =args.num_layers )
+model = RNN_Model(rnn_type=args.time_series_model,input_dim = input_dim,hidden_dim = args.hidden_dim,dropout= args.dropout,num_layers =args.num_layers )
 trainer = Trainer(model)
 eval_results, train_results = trainer.train(dl_train,dl_val,args.num_epochs, args.lr,args)
-
-

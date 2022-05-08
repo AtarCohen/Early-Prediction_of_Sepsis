@@ -47,9 +47,9 @@ class RNN_Model(nn.Module):
 
 # dataset for reading feature files we created in feature_extractor.py
 class Dataset(Dataset):
-    def __init__(self, patients: pd.DataFrame):
-        self.patients_df = patients
-        self.patients_list = list(set(patients.ID.values))
+    def __init__(self, patients_list:list, patients_df: pd.DataFrame):
+        self.patients_df = patients_df
+        self.patients_list = patients_list
         self.label=False
         self.columns = ['HR','Max_ICULOS']
         if 'Label' in patients.columns:
