@@ -35,7 +35,7 @@ class RNN_Model(nn.Module):
         batch_size= rnn_inputs.shape[0]
 
         packed_input = torch.nn.utils.rnn.pack_padded_sequence(rnn_inputs, lengths=lengths, batch_first=True, enforce_sorted=False)
-        rnn_output, _ = self.rnn(packed_input, (h_0,c_0))
+        rnn_output, _ = self.rnn(packed_input)
         # rnn_output = rnn_output*rnn_output*mask[:,:,0].unsqueeze(2)
         unpacked_rnn_out, unpacked_rnn_out_lengths = torch.nn.utils.rnn.pad_packed_sequence(rnn_output, padding_value=-1, batch_first=True)
         unpacked_rnn_out = self.dropout(unpacked_rnn_out)
