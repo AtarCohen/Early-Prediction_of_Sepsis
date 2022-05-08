@@ -12,4 +12,6 @@ dependencies:
       - scipy==1.8.0
       - seaborn==0.11.1
       - plotly== #TODO
+      - imblearn== #TODO
+
 
