@@ -28,6 +28,7 @@ class Trainer:
         # # delattr(args, 'test_split')
         wandb.config.update(args)
         self.model.train()
+        best_results = {'val acc': 0, 'val F1': 0}
         self.model.to(self.device)
         optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
 
@@ -40,7 +41,6 @@ class Trainer:
             pbar = tqdm.tqdm(total=number_of_batches)
             epoch_loss = 0
             mean_epoch_acc = 0
-            mean_epoch_f1= 0
             all_targets = torch.Tensor()
             all_predictions = torch.Tensor()
             for batch in train_data_loader:
@@ -83,6 +83,14 @@ class Trainer:
                 # if args.upload is True:  # **controlled by wandb mode
                 wandb.log(results)
 
+                if results['val acc'] > best_results['val acc'] + 5e-3:
+                    best_results['val acc'] = results['val acc']
+                    best_results['epoch acc'] = epoch
+
+                if results['val F1'] > best_results['val F1'] + 5e-3:
+                    best_results['val F1'] = results['val F1']
+                    best_results['epoch F1'] = epoch
+
             # ** new:
             if epoch_F1 > best_F1 + 1e-2:
                 best_F1 = epoch_F1
@@ -93,6 +101,7 @@ class Trainer:
                 if steps_no_improve >= early_stop:
                     break
 
+        wandb.log({f'best_{k}': v for k, v in best_results.items()})
         wandb.finish()
         return train_results_list,eval_results_list
 
