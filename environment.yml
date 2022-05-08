@@ -13,5 +13,6 @@ dependencies:
       - seaborn==0.11.1
       - plotly== #TODO
       - imblearn== #TODO
+      - wandb==#TODO
 
 
