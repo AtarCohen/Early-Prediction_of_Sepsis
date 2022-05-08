@@ -7,7 +7,7 @@ import torch.nn as nn
 import math
 import pandas as pd
 from sklearn.metrics import f1_score, accuracy_score
-# import wandb
+import wandb
 from datetime import datetime
 import tqdm
 
@@ -18,17 +18,15 @@ class Trainer:
         self.device = device
         self.ce = nn.CrossEntropyLoss(ignore_index=-100)
 
-    def train(self, train_data_loader,test_data_loader, num_epochs, learning_rate,args,early_stop=8,eval_rate=1):
+    def train(self, train_data_loader,test_data_loader, num_epochs, learning_rate,args,early_stop=15,eval_rate=1):
         number_of_seqs = len(train_data_loader.sampler)
         number_of_batches = len(train_data_loader.batch_sampler)
         train_results_list = []
         eval_results_list = []
 
-        # wandb.init(project=args.project, group=args.group,
-        #            name="split: " + str(test_split), entity=args.entity,  # ** we added entity, mode
-        #            mode=args.wandb_mode)
+        wandb.init(project="lab1_lstm", entity="labteam",mode=args.wandb_mode)
         # # delattr(args, 'test_split')
-        # wandb.config.update(args, allow_val_change=True)
+        wandb.config.update(args)
         self.model.train()
         self.model.to(self.device)
         optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
@@ -43,7 +41,8 @@ class Trainer:
             epoch_loss = 0
             mean_epoch_acc = 0
             mean_epoch_f1= 0
-
+            all_targets = torch.Tensor()
+            all_predictions = torch.Tensor()
             for batch in train_data_loader:
                 batch_input, batch_target, lengths, mask = batch
                 mask = mask.to(self.device)
@@ -56,33 +55,37 @@ class Trainer:
                 optimizer.step()
                 _, predicted = torch.max(predictions, 1)
                 acc = accuracy_score(batch_target,predicted)
-                F1 =f1_score(batch_target,predicted)
+                mean_epoch_acc +=acc
+                # F1 =f1_score(batch_target,predicted)
             # schedular.step(acc)
-            mean_epoch_f1 += F1
-            mean_epoch_acc += acc
+                all_targets = torch.cat([all_targets,batch_target])
+                all_predictions = torch.cat([all_predictions,predicted])
+
+            all_targets = all_targets.detach().numpy()
+            all_predictions = all_predictions.detach().numpy()
+            epoch_F1= f1_score(all_targets,all_predictions)
+            epoch_acc = accuracy_score(all_targets,all_predictions)
             pbar.close()
-            print(f"  [epoch {epoch + 1}: train loss = {epoch_loss / number_of_seqs},   "
-                                  f"train acc = {acc}, train F1 = {F1}")
+            print(f" \n [epoch {epoch + 1}: train loss = {epoch_loss / number_of_seqs},  mean acc: {mean_epoch_acc/number_of_batches} "
+                                  f"train acc = {epoch_acc}, train F1 = {epoch_F1}")
             train_results = {"epoch": epoch, "train loss": epoch_loss / number_of_seqs,
-                             "train acc": acc, 'train F1': F1}
+                             "train acc": epoch_acc, 'train F1': epoch_F1}
 
             # if args.upload: # **controlled by wandb mode
-            # wandb.log(train_results)
+            wandb.log(train_results)
             train_results_list.append(train_results)
             if (epoch + 1) % eval_rate == 0:
                 print("epoch: " + str(epoch + 1) + " model evaluation")
                 results = {"epoch": epoch}
                 results.update(self.eval(test_data_loader))
                 eval_results_list.append(results)
-                print(f"  [epoch {epoch + 1}: train loss = {epoch_loss / number_of_seqs},   "
-                      f"train acc = {acc}, train F1 = {F1}")
-
+                print(f"\n  [epoch {epoch + 1}: val acc = {results['val acc']}, val F1 = {results['val F1']}")
                 # if args.upload is True:  # **controlled by wandb mode
-                # wandb.log(results)
+                wandb.log(results)
 
             # ** new:
-            if F1 > best_F1 + 1e-2:
-                best_F1 = F1
+            if epoch_F1 > best_F1 + 1e-2:
+                best_F1 = epoch_F1
                 steps_no_improve = 0
                 torch.save(self.model.state_dict(), "F1_model.h5")
             else:
@@ -90,8 +93,7 @@ class Trainer:
                 if steps_no_improve >= early_stop:
                     break
 
-        # wandb.log({f'best_{k}': v for k, v in best_results.items()})
-        # wandb.finish()
+        wandb.finish()
         return train_results_list,eval_results_list
 
 
@@ -110,8 +112,8 @@ class Trainer:
                 _, predicted = torch.max(predictions, 1)
                 all_preds += predicted
                 all_labels += batch_target
-            results['acc'] = accuracy_score(all_labels,all_preds)
-            results['F1'] = f1_score(all_labels,all_preds)
+            results['val acc'] = accuracy_score(all_labels,all_preds)
+            results['val F1'] = f1_score(all_labels,all_preds)
         self.model.train()
         return results
 
