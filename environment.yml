@@ -14,6 +14,10 @@ dependencies:
       - plotly== #TODO
       - imblearn== #TODO
       - wandb==#TODO
+<<<<<<< Updated upstream
       - statsmodels== #TODO??
+=======
+      - xgboost==#TODO
+>>>>>>> Stashed changes
 
 
