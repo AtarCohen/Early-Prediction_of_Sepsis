@@ -1,7 +1,7 @@
 method: bayes
 metric:
   goal: maximize
-  name: val F1
+  name: best_val F1
 parameters:
   batch_size:
     values:
@@ -45,4 +45,4 @@ parameters:
     max: 0.7
     min: 0.4
 program: LSTM_main.py
-project: LSTM_2
+project: LSTM_3
