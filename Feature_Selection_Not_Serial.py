@@ -16,7 +16,7 @@ import pickle
 pd.options.mode.chained_assignment = None  # default='warn'
 
 class feature_selection():
-    def __init__(self,train_path,validation_path,features=None,method = 'asc', window_size = 5, time_bm=-10,p_smote=0.5, p_under=0.5, model='randomforest'):
+    def __init__(self,train_path,validation_path,features=None,method = 'asc', window_size = 5, time_bm=-10,p_smote=0.5, p_under=0.5, model='RF'):
         self.frequency_used_attributes = ['BaseExcess', 'FiO2', 'pH', 'PaCO2', 'Glucose', 'Lactate', 'PTT']
         self.values_used_attributes = ['Hct', 'Glucose', 'Potassium']
         self.constant_attributes = ['ID', 'max_ICULOS', 'Gender']
@@ -30,6 +30,7 @@ class feature_selection():
         self.train_df = self.preprocess(pd.read_csv(train_path))
         self.columns =  list(self.train_df.columns)
         self.columns.remove('Label')
+        self.columns.remove('ID')
         if features == None:
             self.features = self.columns
         self.feature_number = len(self.features)
