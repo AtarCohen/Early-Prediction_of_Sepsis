@@ -13,6 +13,7 @@ from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score
 import pickle
+pd.options.mode.chained_assignment = None  # default='warn'
 
 class feature_selection():
     def __init__(self,train_path,validation_path,features=None,method = 'asc', window_size = 5, time_bm=-10,p_smote=0.5, p_under=0.5, model='randomforest'):
@@ -131,9 +132,7 @@ class feature_selection():
         self.knn_imp = KNNImputer(n_neighbors=n) # Init the transformer
         self.knn_imp.fit(data_knn_imputed)
 
-    def os_with_smote(self,df):
-        X = df.loc[:, df.columns != 'Label']
-        y = df.loc[:, df.columns == 'Label']
+    def os_with_smote(self,X,y):
         os = SMOTE(sampling_strategy=self.p_smote, random_state=0)
         columns = X.columns
         os_data_X, os_data_y = os.fit_resample(X, y)
