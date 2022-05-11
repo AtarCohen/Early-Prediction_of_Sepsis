@@ -38,11 +38,13 @@ class feature_selection():
         self.p_smote = p_smote
         self.p_under = p_under
         self.train_df = self.preprocess(pd.read_csv(train_path))
-        self.columns =  list(self.train_df.columns)
-        self.columns.remove('Label')
-        self.columns.remove('ID')
-        if features == None:
-            self.features = self.columns
+        self.method=method
+        self.restart_selctor()
+        # self.columns =  list(self.train_df.columns)
+        # self.columns.remove('Label')
+        # self.columns.remove('ID')
+        # if features == None:
+        #     self.features = self.columns
         self.feature_number = len(self.features)
         self.imputation_with_KNNimputer()
         self.X_train = pd.DataFrame(self.knn_imp.transform(self.train_df[self.features]), columns=self.features)
@@ -55,10 +57,18 @@ class feature_selection():
         # self.test_df = self.preprocess(pd.read_csv(test_path))
         self.res = {'Train': {}, 'Val': {}}
         self.model_name=model
-        if method=='asc':
+
+
+    def restart_selctor(self):
+        self.columns =  list(self.train_df.columns)
+        self.columns.remove('Label')
+        self.columns.remove('ID')
+        self.features = self.columns
+        if self.method=='asc':
             self.chosen_features = []
         else:
-            self.chosen_features = features
+            self.chosen_features = self.features.copy()
+
 
     def set_model(self):
         if self.model_name=='LR':
@@ -172,7 +182,6 @@ class feature_selection():
         return os_data_X, os_data_y
 
     def feature_selection_asc(self):
-        wandb.init(project="Non_Serial_Feature_Selection", entity="labteam",mode='online',name=f'{self.model_name}_Asc Features')
         best_features = []
         best_f1 = -1
         for i in range(self.feature_number):
@@ -225,6 +234,9 @@ train_path="/home/student/filtered_train_df_0705.csv"
 validation_path = "/home/student/filtered_val_df_0705.csv"
 
 F_selector = feature_selection(train_path = train_path, validation_path=validation_path)
-for model in ['RF','XGB','LR']:
+for model in ['XGB','LR']:
+    wandb.init(project="Non_Serial_Feature_Selection", entity="labteam", mode='online',
+               name=f'{model}_Asc Features')
     F_selector.model_name=model
     F_selector.feature_selection_asc()
+    F_selector.restart_selector()
