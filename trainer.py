@@ -44,7 +44,7 @@ class Trainer:
             all_targets = torch.Tensor()
             all_predictions = torch.Tensor()
             for batch in train_data_loader:
-                batch_input, batch_target, lengths, mask = batch
+                batch_input, batch_target, lengths, mask,_ = batch
                 mask = mask.to(self.device)
                 optimizer.zero_grad()
                 lengths = lengths.to(dtype=torch.int64).to(device='cpu')
@@ -90,12 +90,13 @@ class Trainer:
                 if results['val F1'] > best_results['val F1'] + 5e-3:
                     best_results['val F1'] = results['val F1']
                     best_results['epoch F1'] = epoch
+                    torch.save({"model_state": self.model.state_dict()}, f'{wandb.run.dir}/best_f1.pth')
 
             # ** new:
             if epoch_F1 > best_F1 + 1e-2:
                 best_F1 = epoch_F1
                 steps_no_improve = 0
-                torch.save(self.model.state_dict(), "F1_model.h5")
+
             else:
                 steps_no_improve += 1
                 if steps_no_improve >= early_stop:
@@ -106,7 +107,7 @@ class Trainer:
         return train_results_list,eval_results_list
 
 
-    def eval(self, test_data_loader):
+    def eval(self, test_data_loader,name='val'):
         results = {}
         self.model.eval()
         all_preds = []
@@ -114,15 +115,15 @@ class Trainer:
         with torch.no_grad():
             self.model.to(self.device)
             for batch in test_data_loader:
-                batch_input, batch_target, lengths, mask = batch
+                batch_input, batch_target, lengths, mask,_ = batch
                 mask = mask.to(self.device)
                 lengths = lengths.to(dtype=torch.int64).to(device='cpu')
                 predictions = self.model(batch_input, lengths, mask)
                 _, predicted = torch.max(predictions, 1)
                 all_preds += predicted
                 all_labels += batch_target
-            results['val acc'] = accuracy_score(all_labels,all_preds)
-            results['val F1'] = f1_score(all_labels,all_preds)
+            results[f'{name} acc'] = accuracy_score(all_labels,all_preds)
+            results[f'{name} F1'] = f1_score(all_labels,all_preds)
         self.model.train()
         return results
 

@@ -1,6 +1,5 @@
 import torch
 from torch import nn
-from torch.utils.data import DataLoader
 import numpy as np
 from trainer import Trainer
 import os
@@ -11,6 +10,7 @@ import random
 import logging
 import itertools
 import pandas as pd
+from torch.utils.data import DataLoader
 from LSTM_Model import RNN_Model, Dataset, collate_inputs
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler
@@ -42,27 +42,25 @@ def parsing():
     parser.add_argument('--wandb_mode', choices=['online', 'offline', 'disabled'], default='online', type=str)
     parser.add_argument('--project', default="Sepsis_Predictions", type=str)
     # parser.add_argument('--entity', default="surgical_data_science", type=str)
-    parser.add_argument('--group', default=dt_string + " group ", type=str)
-    # parser.add_argument('--use_gpu_num', default="0", type=str)
 
-    parser.add_argument('--time_series_model', choices=['LSTM','GRU'], default='LSTM', type=str)
+    parser.add_argument('--time_series_model', choices=['LSTM','GRU'], default='GRU', type=str)
 
     parser.add_argument('--num_layers', default=4, type=int)
-    parser.add_argument('--hidden_dim', default=128, type=int)
+    parser.add_argument('--hidden_dim', default=32, type=int)
     parser.add_argument('--bidirectional', default=False, type=bool)
-    parser.add_argument('--dropout', default=0.4, type=float)
+    parser.add_argument('--dropout', default=0.4526, type=float)
 
     parser.add_argument('--eval_rate', default=1, type=int)
     parser.add_argument('--batch_size', default=32, type=int)
-    parser.add_argument('--lr', default=0.1, type=float)
+    parser.add_argument('--lr', default=0.001497, type=float)
     parser.add_argument('--num_epochs', default=100, type=int)
 
     # parser.add_argument('--imputation', choices=['iterative','mean','median'], default='iterative', type=str)
     parser.add_argument('--window', default=5, type=int)
-    parser.add_argument('--seq_len', default=5, type=int)
+    parser.add_argument('--seq_len', default=10, type=int)
     parser.add_argument('--sample', choices=['over','under','overunder'], default='overunder', type=str)
-    parser.add_argument('--over_sample_rate', default='0.3', type=float)
-    parser.add_argument('--under_sample_rate', default='0.5', type=float)
+    parser.add_argument('--over_sample_rate', default='0.3449', type=float)
+    parser.add_argument('--under_sample_rate', default='0.5034', type=float)
 
     args = parser.parse_args()
     assert 0 <= args.dropout <= 1
@@ -142,6 +140,7 @@ def sample(df,args):
         ids,labels = under.fit_resample(ids,labels)
     return ids['ID'].values
 
+print('OMST')
 args = parsing()
 set_seed()
 logger.info(args)
@@ -157,7 +156,13 @@ dl_train = DataLoader(ds_train, batch_size=args.batch_size, collate_fn=collate_i
 val_df = pd.read_csv(VAL_PATH)
 val_patients= list(set(val_df.ID.values))
 ds_val = Dataset(val_patients,val_df,cols)
-dl_val = DataLoader(ds_val, batch_size=args.batch_size, collate_fn=collate_inputs)
+dl_val = DataLoader(ds_val, batch_size=args.batch_size, collate_fn=collate_inputs, shuffle=False)
 model = RNN_Model(rnn_type=args.time_series_model,bidirectional=args.bidirectional,input_dim = input_dim,hidden_dim = args.hidden_dim,dropout= args.dropout,num_layers =args.num_layers )
 trainer = Trainer(model)
 eval_results, train_results = trainer.train(dl_train,dl_val,args.num_epochs, args.lr,args)
+
+# test_df = pd.read_csv(TEST_PATH)
+# test_patients= list(set(test_df.ID.values))
+# ds_test = Dataset(test_patients,test_df,cols)
+# dl_test = DataLoader(ds_test, batch_size=args.batch_size, collate_fn=collate_inputs)
+# print(trainer.eval(dl_test,name='test'))
