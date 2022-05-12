@@ -230,6 +230,7 @@ class NotSerialModelsTrainer():
         best_features = []
         best_f1 = -1
         f1_test_on_best=-1
+        best_i = -1
         best_features_dict = {}
         for i in range(self.feature_number):
             res = {'Train': {}, 'Val': {}}
@@ -255,12 +256,14 @@ class NotSerialModelsTrainer():
                 best_f1 = best_i_f1
                 best_features = self.chosen_features
                 f1_test_on_best = f1_test
+                best_i = i+1
                 joblib.dump(self.model, f'best_{self.model_name}_{i+1}')
             self.res['Train'][i] = res['Train']
             self.res['Val'][i] = res['Val']
         self.best_features = best_features
         self.best_f1 = best_f1
         print(f'Best F1 Score: {best_f1}')
+        print(f'Number Of Features: {best_i}')
         print(f'Best Features: {best_features}')
         print(f'F1 Test on Best Features: {f1_test_on_best}')
 
@@ -281,7 +284,7 @@ def parsing():
     parser.add_argument('--wandb_mode', choices=['online', 'offline', 'disabled'], default='online', type=str)
     parser.add_argument('--project', default="Sepsis_Predictions", type=str)
 
-    parser.add_argument('--model', choices=['RF','XGB','LR'], default='RF', type=str)
+    parser.add_argument('--model', choices=['RF','XGB','LR'], default='XGB', type=str)
     parser.add_argument('--mode', choices=['selector','trainer'], default='selector', type=str)
     parser.add_argument('--selector_method', choices=['asc','dsc'], default='asc', type=str)
     parser.add_argument('--impute_path', default='knn_imputer', type=str)
