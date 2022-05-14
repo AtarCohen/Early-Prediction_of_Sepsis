@@ -186,4 +186,4 @@ if __name__ == "__main__":
     print('F1 Score: ',f1_score(preprocessor.y,y_pred))
     final_results =preprocessor.IDS
     final_results['SepsisLabel'] = y_pred
-    # final_results.to_csv('results.csv', index=False,)
+    # final_results.to_csv('results.csv', index=False)

@@ -21,6 +21,7 @@ from sklearn.metrics import f1_score
 import pickle
 import wandb
 import joblib
+from copy import deepcopy
 
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.reset_option('all')
@@ -66,6 +67,7 @@ class NotSerialModelsTrainer():
         self.res = {'Train': {}, 'Val': {}}
         self.model_name = args.model
         self.model_path = f'{self.model_name}_{args.run_id}'
+        self.run_id = args.run_id
 
 
     def set_model(self):
@@ -254,7 +256,7 @@ class NotSerialModelsTrainer():
                     best_i_f1 = val_f1
                     best_i_feature = f
                     f1_test = self.eval(cols, ds='test')
-                    best_model = self.model.copy()
+                    best_model = deepcopy(self.model)
             print(f'Best F1 Score for round {i + 1}: {best_i_f1}')
             print(f'Feature Added: {best_i_feature}')
             self.chosen_features += [best_i_feature]
@@ -275,11 +277,11 @@ class NotSerialModelsTrainer():
         print(f'Number Of Features: {best_i}')
         print(f'Best Features: {self.best_features}')
         print(f'F1 Test on Best Features: {f1_test_on_best}')
-        with open(f'Results_{self.model_name}_run2.pickle', 'wb') as handle:
+        with open(f'Results_{self.model_name}_run_{self.run_id}.pickle', 'wb') as handle:
             pickle.dump(self.res, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        with open(f'Best_features_{self.model_name}_run2.pickle', 'wb') as handle:
+        with open(f'Best_features_{self.model_name}_run_{self.run_id}.pickle', 'wb') as handle:
             pickle.dump(self.best_features, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        with open(f'Best_features_dict_{self.model_name}_run2pickle', 'wb') as handle:
+        with open(f'Best_features_dict_{self.model_name}_run_{self.run_id}.pickle', 'wb') as handle:
             pickle.dump(best_features_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
         wandb.log({'best_features': self.best_features})
 
@@ -293,7 +295,7 @@ def parsing():
     parser.add_argument('--project', default="Sepsis_Predictions", type=str)
 
     parser.add_argument('--model', choices=['RF','XGB','LR'], default='XGB', type=str)
-    parser.add_argument('--mode', choices=['selector','trainer'], default='trainer', type=str)
+    parser.add_argument('--mode', choices=['selector','trainer'], default='selector', type=str)
     parser.add_argument('--selector_method', choices=['asc','dsc'], default='asc', type=str)
     parser.add_argument('--impute_path', default='knn_imputer', type=str)
     parser.add_argument('--impute', default=False, type=bool)
@@ -325,4 +327,5 @@ if args.mode=='selector':
     columns= ['max_ICULOS', 'SOFA__max', 'Unit2__max', 'Unit3__max', 'HospAdmTime__mean', '5w_sum_BaseExcess__mean', '5w_sum_FiO2__mean', '5w_sum_pH__mean', '5w_sum_PaCO2__mean', '5w_sum_Glucose__mean', '5w_sum_Lactate__mean', '5w_sum_PTT__mean', 'freq_BaseExcess', 'freq_HCO3', 'freq_FiO2', 'freq_pH', 'freq_PaCO2', 'freq_SaO2', 'freq_AST', 'freq_BUN', 'freq_Alkalinephos', 'freq_Calcium', 'freq_Chloride', 'freq_Glucose', 'freq_Lactate', 'freq_Magnesium', 'freq_Phosphate', 'freq_Potassium', 'freq_Bilirubin_total', 'freq_Hct', 'freq_Hgb', 'freq_PTT', 'freq_WBC', 'freq_Fibrinogen']
     wandb.init(project="Non_Serial_Feature_Selection_run3", entity="labteam", mode='online',
                name=f'{args.model}_Asc Features')
-    trainer.activate_selector()
+
+    trainer.activate_selector(columns=columns)
