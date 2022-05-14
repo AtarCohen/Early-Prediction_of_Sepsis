@@ -11,16 +11,8 @@ dependencies:
       - shap==0.40.0
       - scipy==1.8.0
       - seaborn==0.11.1
-      - plotly== #TODO
-      - imblearn== #TODO
-      - wandb==#TODO
-      - Lime
-<<<<<<< Updated upstream
+      - plotly== 5.7.0
+      - imblearn== 0.9.0
+      - wandb==0.12.16
       - statsmodels== #TODO??
-=======
-      - xgboost== #TODO
-      - shap== #TODO
-
->>>>>>> Stashed changes
-
-
+      - xgboost==1.6.0
