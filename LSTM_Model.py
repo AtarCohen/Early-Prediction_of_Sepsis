@@ -7,17 +7,19 @@ import numpy as np
 import os
 from torch.utils.data import Dataset
 import re
-from torch.autograd import Variable
+
 
 
 class RNN_Model(nn.Module):
+    """
+    RNN model base class
+    Supports GRU or LSTM layers
+    """
     def __init__(self, rnn_type, input_dim, hidden_dim=64, bidirectional=False, dropout=0.4, num_layers=2):
         super(RNN_Model, self).__init__()
 
         self.hidden_dim = hidden_dim
         self.dropout = torch.nn.Dropout(dropout)
-        # The LSTM takes word embeddings as inputs, and outputs hidden states
-        # with dimensionality hidden_dim.
         if rnn_type == "LSTM":
             self.rnn = nn.LSTM(input_dim, hidden_dim, batch_first=True, bidirectional=bidirectional,
                                num_layers=num_layers, dropout=dropout)
@@ -28,30 +30,26 @@ class RNN_Model(nn.Module):
         self.output = nn.Linear(hidden_dim * 2 if bidirectional else hidden_dim, 2)
 
     def forward(self, rnn_inputs, lengths, mask):
-        outputs = []
-        # rnn_inputs = rnn_inputs.permute(0, 2, 1)
-        # mask=mask.permute(0,2,1)
-        # rnn_inputs=self.dropout(rnn_inputs)
         rnn_inputs = rnn_inputs.float()
-        batch_size = rnn_inputs.shape[0]
 
         packed_input = torch.nn.utils.rnn.pack_padded_sequence(rnn_inputs, lengths=lengths, batch_first=True,
                                                                enforce_sorted=False)
         rnn_output, _ = self.rnn(packed_input)
-        # rnn_output = rnn_output*rnn_output*mask[:,:,0].unsqueeze(2)
         unpacked_rnn_out, unpacked_rnn_out_lengths = torch.nn.utils.rnn.pad_packed_sequence(rnn_output,
                                                                                             padding_value=-1,
                                                                                             batch_first=True)
         unpacked_rnn_out = self.dropout(unpacked_rnn_out)
         last_out = torch.stack([unpacked_rnn_out[i, unpacked_rnn_out_lengths[i] - 1, :] for i in range(len(lengths))])
-        # flat_X = torch.cat([unpacked_ltsm_out[i, :lengths[i], :] for i in range(len(lengths))])
-        # unpacked_rnn_out = self.dropout(unpacked_rnn_out)
-        # rnn_output = self.dropout(rnn_output)
         return self.output(last_out)
 
 
-# dataset for reading feature files we created in feature_extractor.py
+#
 class Dataset(Dataset):
+    """
+    Dataset for Patients. the patients_df was created in the PreperaData notebook
+    this class saves patient_list, since weve used over and under sample methods, the patient list does not include
+    all patient from the majority label and includes the minority label with some repetitions.
+    """
     def __init__(self, patients_list: list, patients_df: pd.DataFrame, columns):
         self.patients_df = patients_df
         self.patients_list = patients_list
@@ -73,8 +71,12 @@ class Dataset(Dataset):
         return len(self.patients_list)
 
 
-# collate function to pad a batch of surgeries together
 def collate_inputs(batch):
+    """
+    Collate function to batch several patients which may have different length of stay in the ICU
+    :param batch: items from the dataset
+    :return: batch which includes: model tensor inputs, labels, lengths, masks and patient ids for predicting
+    """
     input_lengths = []
     batch_features = []
     batch_labels = []
@@ -90,17 +92,4 @@ def collate_inputs(batch):
     # compute mask
     input_masks = batch != 0
 
-    # for input_name in label_names:
-    #     batch_labels[input_name] = []
-    #     input_lengths_tmp = []
-    #     for sample in batch:
-    #         sample_labels = sample[1][input_name]
-    #         input_lengths_tmp.append(sample_labels.shape[0])
-    #         batch_labels[input_name].append(sample_labels)
-    #     # pad
-    #     batch_labels[input_name] = torch.nn.utils.rnn.pad_sequence(batch_labels[input_name], padding_value=-100,
-    #                                                                batch_first=True)
-    #     input_lengths.append(input_lengths_tmp)
-
-    # sanity check
     return batch.double(), torch.tensor(batch_labels).type(torch.LongTensor), torch.tensor(input_lengths), input_masks, batch_ids

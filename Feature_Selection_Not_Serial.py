@@ -294,7 +294,7 @@ def parsing():
     parser.add_argument('--wandb_mode', choices=['online', 'offline', 'disabled'], default='online', type=str)
     parser.add_argument('--project', default="Sepsis_Predictions", type=str)
 
-    parser.add_argument('--model', choices=['RF','XGB','LR'], default='XGB', type=str)
+    parser.add_argument('--model', choices=['RF','XGB','LR'], default='RF', type=str)
     parser.add_argument('--mode', choices=['selector','trainer'], default='selector', type=str)
     parser.add_argument('--selector_method', choices=['asc','dsc'], default='asc', type=str)
     parser.add_argument('--impute_path', default='knn_imputer', type=str)
