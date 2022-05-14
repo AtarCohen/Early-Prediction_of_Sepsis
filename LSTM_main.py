@@ -22,12 +22,6 @@ from sklearn.impute import IterativeImputer,SimpleImputer
 
 logger = logging.getLogger(__name__)
 Imputations = {}
-FREQUENCY_ATTR =['5w_sum_BaseExcess', '5w_sum_FiO2', '5w_sum_pH', '5w_sum_PaCO2', '5w_sum_Glucose', '5w_sum_Lactate', '5w_sum_PTT']
-LAB_ATTR = [ 'Hct',  'Glucose','Potassium']
-CONST_ATTR = ['ID','max_ICULOS','Gender']
-OTHER_ATTR = ['HR','MAP','O2Sat', 'Resp','SBP','ICULOS']
-LABEL_ATTR= 'Label'
-COLS = FREQUENCY_ATTR+CONST_ATTR+LAB_ATTR+OTHER_ATTR
 TRAIN_PATH = '/home/student/filtered_train_df_0705_LSTM_new.csv'
 VAL_PATH = '/home/student/filtered_val_df_0705_LSTM_new.csv'
 TEST_PATH = '/home/student/filtered_test_df_0705_LSTM_new.csv'

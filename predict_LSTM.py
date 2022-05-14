@@ -11,103 +11,108 @@ import argparse
 import random
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer,SimpleImputer
-
-def create_patients_df(patients, data_path):
-    """
-    :param patients: all file names in the given directory
-    :param data_path: directory path
-    :return: Patients DataFrame with all the data Provided for each patient
-                                            + 2 new columns: max_ICULOS and time_bm=ICULOS-time_bm
-    """
-    tmp_df = pd.read_csv(os.path.join(data_path,patients[0]),delimiter ='|')
-    tmp_df['ID'] = patients[0].split('_')[-1].split('.')[0]
-    new_df = tmp_df[tmp_df['SepsisLabel']==0]
-    if max(tmp_df['SepsisLabel'])==1:
-        new_df=new_df.append(tmp_df[tmp_df['SepsisLabel']==1][:1])
-        new_df['Label'] = [1]*new_df.shape[0]
-    else:
-        new_df['Label'] = [0]*new_df.shape[0]
-    new_df['max_ICULOS'] = [new_df['ICULOS'].values[-1]]*new_df.shape[0]
-    new_df['time_bm'] =  new_df['ICULOS']-new_df['max_ICULOS']
-    for patient in tqdm.tqdm(patients[1:]):
-        patient_path = os.path.join(data_path,patient)
-        patient_number = patient.split('_')[-1].split('.')[0]
-        tmp_df = pd.read_csv(os.path.join(data_path,patient_path),delimiter ='|')
-        tmp_df['ID'] = patient_number
-        tmp_new_df = tmp_df[tmp_df['SepsisLabel']==0]
-        if max(tmp_df['SepsisLabel'])==1:
-            tmp_new_df=tmp_new_df.append(tmp_df[tmp_df['SepsisLabel']==1][:1])
-            tmp_new_df['Label'] = [1]*tmp_new_df.shape[0]
-        else:
-            tmp_new_df['Label'] = [0]*tmp_new_df.shape[0]
-        tmp_new_df['max_ICULOS'] = [tmp_new_df['ICULOS'].values[-1]]*tmp_new_df.shape[0]
-        tmp_new_df['time_bm'] =  tmp_new_df['ICULOS']-tmp_new_df['max_ICULOS']
-        new_df = new_df.append(tmp_new_df)
-    return new_df
-
-
-class data_preperator():
-    """
-    This
-    """
-    def __init__(self,columns,window_columns=None, freq_columns=None, seq_len=10,window=5):
-        self.all_data_means= pd.read_csv('/home/student/filtered_train_mean.csv')
-        self.seq_len=seq_len
-        self.window = window
-        self.window_columns = window_columns
-        self.freq_columns = freq_columns
-        self.freq_columns_final =  [f'freq_{at}' for at in self.freq_columns]
-        self.columns = columns
-
-    def impute_per_patient(self,df):
-        patients = list(set(df.ID.values))
-        imputed = pd.DataFrame()
-        for patient in patients:
-            tmp_df = df[df['ID']==patient][self.columns+self.freq_columns_final+['time_bm']]
-            # tmp_labels = df[df['ID']==patient]['Label']
-            for f in self.columns:
-                if tmp_df[f].isnull().all:
-                    mean_val = self.all_data_means[self.all_data_means['index']==f]['0'].values[0]
-                    tmp_df[f]=tmp_df[f].fillna(mean_val)
-            imp = IterativeImputer(max_iter=50, random_state=0)
-            # try:
-            imp.fit(tmp_df)
-            tmp_df= pd.DataFrame(imp.transform(tmp_df), columns = self.columns+self.freq_columns_final+['time_bm'])
-            tmp_df['Label'] = df[df['ID']==patient]['Label'].values
-            tmp_df['ID'] = [patient]*tmp_df.shape[0]
-            imputed=imputed.append(tmp_df)
-        return imputed
-
-    def add_rolling_window(self,df):
-        df = df.sort_values(by=['ID','ICULOS'], ascending =[True,True])
-        rolling = df[['ID']+self.window_columns].groupby('ID').rolling(window=self.window, closed='both').count()
-        rolling= rolling.rename(columns={at: f'{self.window}w_sum_{at}' for at in self.window_columns})
-        rolling=rolling[list(rolling.columns)[1:]].reset_index().set_index('level_1')
-        combined = df.join(rolling,how='left', rsuffix= 'r')
-        self.columns +=[f'{self.window}w_sum_{at}' for at in self.window_columns]
-        return combined
-
-    def add_frequency(self,df):
-        df = df.sort_values(by=['ID', 'ICULOS'], ascending=[True, True])
-        rolling = df[['ID','ICULOS']+self.freq_columns].groupby(by=['ID'])[self.freq_columns].expanding().count().reset_index().rename(columns={'level_1':'old_index'})
-        df=df.reset_index().rename(columns={'index':'old_index'})
-        rolling = rolling.rename(columns={at: f'freq_{at}' for at in self.freq_columns})
-        combined = pd.merge(df,rolling, on=['ID','old_index'])
-        for at in self.freq_columns_final:
-            combined[at] = combined[at] / combined['ICULOS']
-        return combined
-
-
-    def prepare_data(self,df, rolling=False,freq=True):
-        if rolling:
-            df = self.add_rolling_window(df)
-        if freq:
-            df = self.add_frequency(df)
-        df = df[df['time_bm']>=-1*(self.seq_len)]
-        df = df[self.columns+self.freq_columns_final+['time_bm','ID','Label']]
-        df = self.impute_per_patient(df)
-        return df
-#%%
+from DataPreaparators import DataPreparator, create_patients_df
+#
+# def create_patients_df(patients, data_path):
+#     """
+#     :param patients: all file names in the given directory
+#     :param data_path: directory path
+#     :return: Patients DataFrame with all the data Provided for each patient
+#                                             + 2 new columns: max_ICULOS and time_bm=ICULOS-time_bm
+#     """
+#     tmp_df = pd.read_csv(os.path.join(data_path,patients[0]),delimiter ='|')
+#     tmp_df['ID'] = patients[0].split('_')[-1].split('.')[0]
+#     new_df = tmp_df[tmp_df['SepsisLabel']==0]
+#     if max(tmp_df['SepsisLabel'])==1:
+#         new_df=new_df.append(tmp_df[tmp_df['SepsisLabel']==1][:1])
+#         new_df['Label'] = [1]*new_df.shape[0]
+#     else:
+#         new_df['Label'] = [0]*new_df.shape[0]
+#     new_df['max_ICULOS'] = [new_df['ICULOS'].values[-1]]*new_df.shape[0]
+#     new_df['time_bm'] =  new_df['ICULOS']-new_df['max_ICULOS']
+#     for patient in tqdm.tqdm(patients[1:]):
+#         patient_path = os.path.join(data_path,patient)
+#         patient_number = patient.split('_')[-1].split('.')[0]
+#         tmp_df = pd.read_csv(os.path.join(data_path,patient_path),delimiter ='|')
+#         tmp_df['ID'] = patient_number
+#         tmp_new_df = tmp_df[tmp_df['SepsisLabel']==0]
+#         if max(tmp_df['SepsisLabel'])==1:
+#             tmp_new_df=tmp_new_df.append(tmp_df[tmp_df['SepsisLabel']==1][:1])
+#             tmp_new_df['Label'] = [1]*tmp_new_df.shape[0]
+#         else:
+#             tmp_new_df['Label'] = [0]*tmp_new_df.shape[0]
+#         tmp_new_df['max_ICULOS'] = [tmp_new_df['ICULOS'].values[-1]]*tmp_new_df.shape[0]
+#         tmp_new_df['time_bm'] =  tmp_new_df['ICULOS']-tmp_new_df['max_ICULOS']
+#         new_df = new_df.append(tmp_new_df)
+#     return new_df
+# #
+# #
+# class DataPreparator():
+#     """
+#     This Class will add columns and impute the data for each patient
+#     """
+#     def __init__(self,columns,window_columns=None, freq_columns=None, seq_len=10,window=5):
+#         self.all_data_means= pd.read_csv('/home/student/filtered_train_mean.csv') #mean values for all possibly null atributes
+#         self.seq_len=seq_len
+#         self.window = window
+#         self.window_columns = window_columns
+#         self.freq_columns = freq_columns
+#         self.freq_columns_final =  [f'freq_{at}' for at in self.freq_columns]
+#         self.columns = columns
+#
+#     def impute_per_patient(self,df):
+#         """
+#         :param df: data frame to impute
+#         :return: imputed data
+#         """
+#         patients = list(set(df.ID.values))
+#         imputed = pd.DataFrame()
+#         for patient in patients:
+#             tmp_df = df[df['ID']==patient][self.columns+self.freq_columns_final+['time_bm']]
+#             # tmp_labels = df[df['ID']==patient]['Label']
+#             for f in self.columns:
+#                 if tmp_df[f].isnull().all:
+#                     mean_val = self.all_data_means[self.all_data_means['index']==f]['0'].values[0]
+#                     tmp_df[f]=tmp_df[f].fillna(mean_val)
+#             imp = IterativeImputer(max_iter=50, random_state=0)
+#             # try:
+#             imp.fit(tmp_df)
+#             tmp_df= pd.DataFrame(imp.transform(tmp_df), columns = self.columns+self.freq_columns_final+['time_bm'])
+#             tmp_df['Label'] = df[df['ID']==patient]['Label'].values
+#             tmp_df['ID'] = [patient]*tmp_df.shape[0]
+#             imputed=imputed.append(tmp_df)
+#         return imputed
+#
+#     def add_rolling_window(self,df):
+#         df = df.sort_values(by=['ID','ICULOS'], ascending =[True,True])
+#         rolling = df[['ID']+self.window_columns].groupby('ID').rolling(window=self.window, closed='both').count()
+#         rolling= rolling.rename(columns={at: f'{self.window}w_sum_{at}' for at in self.window_columns})
+#         rolling=rolling[list(rolling.columns)[1:]].reset_index().set_index('level_1')
+#         combined = df.join(rolling,how='left', rsuffix= 'r')
+#         self.columns +=[f'{self.window}w_sum_{at}' for at in self.window_columns]
+#         return combined
+#
+#     def add_frequency(self,df):
+#         df = df.sort_values(by=['ID', 'ICULOS'], ascending=[True, True])
+#         rolling = df[['ID','ICULOS']+self.freq_columns].groupby(by=['ID'])[self.freq_columns].expanding().count().reset_index().rename(columns={'level_1':'old_index'})
+#         df=df.reset_index().rename(columns={'index':'old_index'})
+#         rolling = rolling.rename(columns={at: f'freq_{at}' for at in self.freq_columns})
+#         combined = pd.merge(df,rolling, on=['ID','old_index'])
+#         for at in self.freq_columns_final:
+#             combined[at] = combined[at] / combined['ICULOS']
+#         return combined
+#
+#
+#     def prepare_data(self,df, rolling=False,freq=True):
+#         if rolling:
+#             df = self.add_rolling_window(df)
+#         if freq:
+#             df = self.add_frequency(df)
+#         df = df[df['time_bm']>=-1*(self.seq_len)]
+#         df = df[self.columns+self.freq_columns_final+['time_bm','ID','Label']]
+#         df = self.impute_per_patient(df)
+#         return df
+# #%%
 
 
 def set_seed(seed=42):
@@ -154,7 +159,7 @@ if __name__ == "__main__":
     test_files= sys.argv[1]
     patients = os.listdir(test_files)
     test_df = create_patients_df(patients,test_files)
-    p = data_preperator(columns=COLS, freq_columns=ALL_LAB_ATTR)
+    p = DataPreparator(columns=COLS, freq_columns=ALL_LAB_ATTR)
     test_df = p.prepare_data(test_df)
     # test_df = pd.read_csv('/home/student/filtered_test_df_0705_LSTM_new.csv')
     test_patients = list(set(test_df.ID.values))

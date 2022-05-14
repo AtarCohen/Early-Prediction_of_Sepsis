@@ -219,6 +219,7 @@ class NotSerialModelsTrainer():
         return f1_score(y, y_train_pred)
 
     def eval(self, cols, ds='val'):
+        random.seed(0)
         X = self.X_val[cols] if ds=='val' else self.X_test[cols]
         # X_val = self.X_val[cols]
         y_pred = self.model.predict(X)
@@ -249,12 +250,12 @@ class NotSerialModelsTrainer():
             print(f'Best F1 Score for round {i + 1}: {best_i_f1}')
             print(f'Feature Added: {best_i_feature}')
             self.chosen_features += [best_i_feature]
-            best_features_dict[i+1] = self.chosen_features
+            best_features_dict[i+1] = self.chosen_features.copy()
             self.features.remove(best_i_feature)
             wandb.log({'Epoch': i + 1, 'F1 val': best_i_f1, 'Feature': best_i_feature, 'F1 Test':f1_test})
             if best_i_f1 > best_f1:
                 best_f1 = best_i_f1
-                best_features = self.chosen_features
+                best_features = self.chosen_features.copy()
                 f1_test_on_best = f1_test
                 best_i = i+1
                 joblib.dump(self.model, f'best_{self.model_name}_{i+1}')
@@ -264,14 +265,13 @@ class NotSerialModelsTrainer():
         self.best_f1 = best_f1
         print(f'Best F1 Score: {best_f1}')
         print(f'Number Of Features: {best_i}')
-        print(f'Best Features: {best_features}')
+        print(f'Best Features: {self.best_features}')
         print(f'F1 Test on Best Features: {f1_test_on_best}')
-
-        with open(f'Results_{self.model_name}_run.pickle', 'wb') as handle:
+        with open(f'Results_{self.model_name}_run2.pickle', 'wb') as handle:
             pickle.dump(self.res, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        with open(f'Best_features_{self.model_name}_run.pickle', 'wb') as handle:
+        with open(f'Best_features_{self.model_name}_run2.pickle', 'wb') as handle:
             pickle.dump(self.best_features, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        with open(f'Best_features_dict_{self.model_name}_run.pickle', 'wb') as handle:
+        with open(f'Best_features_dict_{self.model_name}_run2pickle', 'wb') as handle:
             pickle.dump(best_features_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
         wandb.log({'best_features': self.best_features})
 
@@ -284,7 +284,7 @@ def parsing():
     parser.add_argument('--wandb_mode', choices=['online', 'offline', 'disabled'], default='online', type=str)
     parser.add_argument('--project', default="Sepsis_Predictions", type=str)
 
-    parser.add_argument('--model', choices=['RF','XGB','LR'], default='XGB', type=str)
+    parser.add_argument('--model', choices=['RF','XGB','LR'], default='RF', type=str)
     parser.add_argument('--mode', choices=['selector','trainer'], default='selector', type=str)
     parser.add_argument('--selector_method', choices=['asc','dsc'], default='asc', type=str)
     parser.add_argument('--impute_path', default='knn_imputer', type=str)
@@ -313,6 +313,7 @@ if args.mode=='trainer':
     print(f'Train F1 Score: {train_f1}')
     print(f'Val F1 Score: {trainer.eval(cols=features, ds="val")}')
 if args.mode=='selector':
+    print('starting feature selector ',args.model)
     wandb.init(project="Non_Serial_Feature_Selection_run2", entity="labteam", mode='online',
                name=f'{args.model}_Asc Features')
     trainer.activate_selector()
