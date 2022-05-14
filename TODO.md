@@ -19,42 +19,42 @@
 Exploration
 <ol> 
 <li>
-TemporalDataExploration.ipynb
+TemporalDataExploration.ipynb - לוודא הערות/תיעוד
 </li>
 <li>
-NonTemporalExploration.ipynb - לוודא שמעודכן אחרי השינויים של עטר היום
+NonTemporalExploration.ipynb -  לוודא שמעודכן אחרי השינויים של עטר היום + הערות
 </li>
 </ol>
 <li>
 DataProcessing
 <ol>
 <li>
-PrepareData.ipynb (currently in /notebooks)
+PrepareData.ipynb (currently in /notebooks) - comments
 </li>
 <li>
-DataPreparators.py</li>
+DataPreparators.py - comments</li> 
 </ol>
 </li>
 <li> Non Temporal Models
 <ol>
 <li>
-Feature_Selection_Not_Serial.py (maybe change its name)
+Feature_Selection_Not_Serial.py (maybe change its name) - comments
 </li>
 <li>
-predict_ns.py (name need to change to predict.py assuming this will be our best model)
+predict_ns.py (name need to change to predict.py assuming this will be our best model) - comments
 </li>
 </ol>
 </li>
 <li> RNN Models
 <ol>
-<li> LSTM_Model.py </li>
-<li> LSTM_main.py </li>
-<li> trainer.py </li>
-<li>predict_LSTM.py </li>
+<li> LSTM_Model.py - <s>comments </s> </li>
+<li> LSTM_main.py  <s>comments </s>  </li>
+<li> trainer.py  <s>comments </s> </li>
+<li>predict_LSTM.py - comments</li>
 <li>sweep.yaml? </li>
 </ol>
 </li>
-<li> Explain_Models.ipynb</li>
+<li> Explain_Models.ipynb - comments </li>
 <li> enivornment.yaml </li>
 <li> readme? </li>
 </ol>

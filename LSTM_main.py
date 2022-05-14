@@ -68,61 +68,14 @@ def set_seed(seed=42):
     torch.backends.cudnn.deterministic = True
 
 
-# def prepare_data(df,args,type):
-#     df = df[df['time_bm']>=-1*(args.seq_len+args.window)]
-#     df = add_rolling_window(df, FREQUENCY_ATTR, args.window)
-#     df = df[df['time_bm']>=-1*(args.seq_len)]
-#     if type=='train':
-#         patient_ids = sample(df, args)
-#     else:
-#         patient_ids = list(set(df.ID.values))
-#     df= df[COLS]
-#     df = impute_per_patient(df,args)
-#     return df, patient_ids
-#
-#
-# class data_preperator():
-#     def __init__(self,train_df,seq_len=10,window=5):
-#         self.all_data_means= train_df.mean()
-#         self.seq_len=seq_len
-#         self.window = window
-#
-#     def impute_per_patient(self,df):
-#         patients = list(set(df.ID.values))
-#         imputed = pd.DataFrame()
-#         for patient in patients:
-#             tmp_df = df[df['ID']==patient][COLS+['Label']]
-#             for f in LAB_ATTR+OTHER_ATTR:
-#                 if tmp_df[f].isnull().all:
-#                     tmp_df[f]=tmp_df[f].fillna(self.all_data_means[f])
-#             imp = IterativeImputer(max_iter=50, random_state=0)
-#             try:
-#                 imp.fit(tmp_df)
-#                 tmp_df= pd.DataFrame(imp.transform(tmp_df), columns = COLS+['Label'])
-#                 imputed=imputed.append(tmp_df)
-#             except:
-#                 print(tmp_df.shape)
-#         return imputed
-#
-#     def add_rolling_window(self,df, attr, window_size):
-#         df = df.sort_values(by=['ID','ICULOS'], ascending =[True,True])
-#         rolling = df[['ID']+attr].groupby('ID').rolling(window=window_size, closed='both').count()
-#         rolling= rolling.rename(columns={at: f'{window_size}w_sum_{at}' for at in attr})
-#         rolling=rolling[list(rolling.columns)[1:]].reset_index().set_index('level_1')
-#         combined = df.join(rolling,how='left', rsuffix= 'r')
-#         return combined
-#
-#     def prepare_data(self,df):
-#         df = df[df['time_bm']>=-1*(self.seq_len+self.window)]
-#         df = self.add_rolling_window(df, frequency_used_attributes, self.window)
-#         df = df[df['time_bm']>=-1*(self.seq_len)]
-#         df= df[COLS+['Label']]
-#         df = self.impute_per_patient(df)
-#         return df
-
-
 
 def sample(df,args):
+    """
+    Over and Under sample from the train dataset
+    :param df:  train dataframe
+    :param args:  include sample rates
+    :return: list of sampled ids (oversampled from minority class and under sampled from majority class)
+    """
     df = df[['ID', 'Label']].groupby(by='ID').max().reset_index()
     ids = df[['ID']]
     labels = df['Label']
@@ -134,14 +87,14 @@ def sample(df,args):
         ids,labels = under.fit_resample(ids,labels)
     return ids['ID'].values
 
-print('OMST')
+
 args = parsing()
 set_seed()
 logger.info(args)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 train_df = pd.read_csv(TRAIN_PATH)
-cols = list(train_df.columns)
-cols.remove('Label')
+cols = list(train_df.columns) #input for the model
+cols.remove('Label') #this is not an input
 cols.remove('ID')
 train_patients= sample(train_df, args)
 input_dim = len(cols)
