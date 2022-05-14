@@ -290,7 +290,7 @@ class NotSerialModelsTrainer():
 
 def parsing():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--run_id',  default='3', type=str)
+    parser.add_argument('--run_id',  default='4', type=str)
     parser.add_argument('--wandb_mode', choices=['online', 'offline', 'disabled'], default='online', type=str)
     parser.add_argument('--project', default="Sepsis_Predictions", type=str)
 
@@ -324,8 +324,7 @@ if args.mode=='trainer':
     print(f'Val F1 Score: {trainer.eval(cols=features, ds="val")}')
 if args.mode=='selector':
     print('starting feature selector ',args.model)
-    columns= ['max_ICULOS', 'SOFA__max', 'Unit2__max', 'Unit3__max', 'HospAdmTime__mean', '5w_sum_BaseExcess__mean', '5w_sum_FiO2__mean', '5w_sum_pH__mean', '5w_sum_PaCO2__mean', '5w_sum_Glucose__mean', '5w_sum_Lactate__mean', '5w_sum_PTT__mean', 'freq_BaseExcess', 'freq_HCO3', 'freq_FiO2', 'freq_pH', 'freq_PaCO2', 'freq_SaO2', 'freq_AST', 'freq_BUN', 'freq_Alkalinephos', 'freq_Calcium', 'freq_Chloride', 'freq_Glucose', 'freq_Lactate', 'freq_Magnesium', 'freq_Phosphate', 'freq_Potassium', 'freq_Bilirubin_total', 'freq_Hct', 'freq_Hgb', 'freq_PTT', 'freq_WBC', 'freq_Fibrinogen']
-    wandb.init(project="Non_Serial_Feature_Selection_run3", entity="labteam", mode='online',
+    # columns= ['max_ICULOS', 'SOFA__max', 'Unit2__max', 'Unit3__max', 'HospAdmTime__mean', '5w_sum_BaseExcess__mean', '5w_sum_FiO2__mean', '5w_sum_pH__mean', '5w_sum_PaCO2__mean', '5w_sum_Glucose__mean', '5w_sum_Lactate__mean', '5w_sum_PTT__mean', 'freq_BaseExcess', 'freq_HCO3', 'freq_FiO2', 'freq_pH', 'freq_PaCO2', 'freq_SaO2', 'freq_AST', 'freq_BUN', 'freq_Alkalinephos', 'freq_Calcium', 'freq_Chloride', 'freq_Glucose', 'freq_Lactate', 'freq_Magnesium', 'freq_Phosphate', 'freq_Potassium', 'freq_Bilirubin_total', 'freq_Hct', 'freq_Hgb', 'freq_PTT', 'freq_WBC', 'freq_Fibrinogen']
+    wandb.init(project=f"Non_Serial_Feature_Selection_run_{args.run_id}", entity="labteam", mode='online',
                name=f'{args.model}_Asc Features')
-
-    trainer.activate_selector(columns=columns)
+    trainer.activate_selector()

@@ -17,7 +17,9 @@ dependencies:
 <<<<<<< Updated upstream
       - statsmodels== #TODO??
 =======
-      - xgboost==#TODO
+      - xgboost== #TODO
+      - shap== #TODO
+
 >>>>>>> Stashed changes
 
 
