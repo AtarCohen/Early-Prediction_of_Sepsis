@@ -183,19 +183,26 @@ class NotSerialModelsTrainer():
         return os_data_X, os_data_y
 
 
-    def activate_selector(self, method='asc'):
+    def activate_selector(self, method='asc', columns = None):
         self.method = method
-        self.restart_selector()
-        self.feature_number = len(self.columns)
+        self.restart_selector(columns)
+        if columns:
+            self.feature_number = len(columns)
+        else:
+            self.feature_number = len(self.columns)
+        print('features: ', self.feature_number)
         if self.method=='asc':
             self.feature_selection_asc()
 
 
-    def restart_selector(self):
+    def restart_selector(self, columns=None):
         self.columns = list(self.train_df.columns)
         self.columns.remove('Label')
         self.columns.remove('ID')
-        self.features = self.columns
+        if columns:
+            self.features = columns
+        else:
+            self.features = self.columns
         if self.method == 'asc':
             self.chosen_features = []
         else:
@@ -247,6 +254,7 @@ class NotSerialModelsTrainer():
                     best_i_f1 = val_f1
                     best_i_feature = f
                     f1_test = self.eval(cols, ds='test')
+                    best_model = self.model.copy()
             print(f'Best F1 Score for round {i + 1}: {best_i_f1}')
             print(f'Feature Added: {best_i_feature}')
             self.chosen_features += [best_i_feature]
@@ -258,7 +266,7 @@ class NotSerialModelsTrainer():
                 best_features = self.chosen_features.copy()
                 f1_test_on_best = f1_test
                 best_i = i+1
-                joblib.dump(self.model, f'best_{self.model_name}_{i+1}')
+                joblib.dump(best_model, f'best_{self.model_name}_run3_{i+1}')
             self.res['Train'][i] = res['Train']
             self.res['Val'][i] = res['Val']
         self.best_features = best_features
@@ -280,12 +288,12 @@ class NotSerialModelsTrainer():
 
 def parsing():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--run_id',  default='1205', type=str)
+    parser.add_argument('--run_id',  default='3', type=str)
     parser.add_argument('--wandb_mode', choices=['online', 'offline', 'disabled'], default='online', type=str)
     parser.add_argument('--project', default="Sepsis_Predictions", type=str)
 
-    parser.add_argument('--model', choices=['RF','XGB','LR'], default='RF', type=str)
-    parser.add_argument('--mode', choices=['selector','trainer'], default='selector', type=str)
+    parser.add_argument('--model', choices=['RF','XGB','LR'], default='XGB', type=str)
+    parser.add_argument('--mode', choices=['selector','trainer'], default='trainer', type=str)
     parser.add_argument('--selector_method', choices=['asc','dsc'], default='asc', type=str)
     parser.add_argument('--impute_path', default='knn_imputer', type=str)
     parser.add_argument('--impute', default=False, type=bool)
@@ -307,13 +315,14 @@ def parsing():
 args = parsing()
 trainer = NotSerialModelsTrainer(args)
 if args.mode=='trainer':
-    with open(f'Best_features_{args.model}_run.pickle', 'rb') as handle:
+    with open(f'Best_features_RF_run2.pickle', 'rb') as handle:
         features = pickle.load(handle)
     train_f1 = trainer.train_model(save=True, cols=features)
     print(f'Train F1 Score: {train_f1}')
     print(f'Val F1 Score: {trainer.eval(cols=features, ds="val")}')
 if args.mode=='selector':
     print('starting feature selector ',args.model)
-    wandb.init(project="Non_Serial_Feature_Selection_run2", entity="labteam", mode='online',
+    columns= ['max_ICULOS', 'SOFA__max', 'Unit2__max', 'Unit3__max', 'HospAdmTime__mean', '5w_sum_BaseExcess__mean', '5w_sum_FiO2__mean', '5w_sum_pH__mean', '5w_sum_PaCO2__mean', '5w_sum_Glucose__mean', '5w_sum_Lactate__mean', '5w_sum_PTT__mean', 'freq_BaseExcess', 'freq_HCO3', 'freq_FiO2', 'freq_pH', 'freq_PaCO2', 'freq_SaO2', 'freq_AST', 'freq_BUN', 'freq_Alkalinephos', 'freq_Calcium', 'freq_Chloride', 'freq_Glucose', 'freq_Lactate', 'freq_Magnesium', 'freq_Phosphate', 'freq_Potassium', 'freq_Bilirubin_total', 'freq_Hct', 'freq_Hgb', 'freq_PTT', 'freq_WBC', 'freq_Fibrinogen']
+    wandb.init(project="Non_Serial_Feature_Selection_run3", entity="labteam", mode='online',
                name=f'{args.model}_Asc Features')
     trainer.activate_selector()

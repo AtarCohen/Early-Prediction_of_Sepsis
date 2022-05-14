@@ -7,6 +7,7 @@ import tqdm
 import argparse
 import pickle
 from DataPreaparators import PreProcess, create_patients_df
+import random
 
 # def create_patients_df(patients, data_path):
 #     """
@@ -174,18 +175,15 @@ if __name__ == "__main__":
     # test_files= sys.argv[1]
     # patients = os.listdir(test_files)
     # test_df = create_patients_df(patients,test_files)
-    test_df = pd.read_csv('/home/student/filtered_val_df_0705.csv')
+    test_df = pd.read_csv('/home/student/filtered_test_df_0705.csv')
     preprocessor= PreProcess(df=test_df, imputer_path='knn_imputer')
-    model = joblib.load('best_XGB_53')
-    with open(f'Best_features_XGB_run.pickle', 'rb') as handle:
+    model = joblib.load('RF_best1405')
+    with open(f'Best_features_RF_run2.pickle', 'rb') as handle:
         features = pickle.load(handle)
-    features = features[:53]
+    # features = features[:53]
+    random.seed(0)
     y_pred = model.predict(preprocessor.X[features])
     print('F1 Score: ',f1_score(preprocessor.y,y_pred))
     final_results =preprocessor.IDS
     final_results['SepsisLabel'] = y_pred
     # final_results.to_csv('results.csv', index=False,)
-
-
-
-
