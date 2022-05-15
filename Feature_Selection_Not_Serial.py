@@ -23,6 +23,10 @@ import joblib
 from copy import deepcopy
 from sklearn.metrics import f1_score, accuracy_score, recall_score,precision_score,roc_auc_score
 
+import warnings
+warnings.filterwarnings('ignore')
+
+
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.reset_option('all')
 
@@ -364,7 +368,7 @@ class NotSerialModelsTrainer():
 
 def parsing():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--run_id',  default='XGB_74_lasttry2', type=str)
+    parser.add_argument('--run_id',  default='XGB_81', type=str)
     parser.add_argument('--wandb_mode', choices=['online', 'offline', 'disabled'], default='online', type=str)
     parser.add_argument('--project', default="Sepsis_Predictions", type=str)
 
@@ -393,7 +397,7 @@ trainer = NotSerialModelsTrainer(args)
 if args.mode=='trainer':
     with open(f'Best_features_dict_XGB_run_4.pickle', 'rb') as handle:
         features_dict = pickle.load(handle)
-    features = features_dict[74]
+    features = features_dict[81]
     train_f1 = trainer.train_model(save=True, cols=features)
     print('*'*10,'Validation Scores','*'*10)
     print(f'val F1 Score: {trainer.eval(cols=features, ds="val", print_res=True)}')

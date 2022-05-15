@@ -14,5 +14,5 @@ dependencies:
       - plotly== 5.7.0
       - imblearn== 0.9.0
       - wandb==0.12.16
-      - statsmodels== #TODO??
       - xgboost==1.6.0
+      - joblib==1.1.0

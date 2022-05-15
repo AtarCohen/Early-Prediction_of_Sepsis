@@ -1,9 +1,9 @@
 <h1> TODO </h1>
 <ol>
-<li> run feature selection on LR? לא חייבים</li>
+<li> <s> run feature selection on LR? לא חייבים </s> </li>
 <li> לסדר את הגיט ככה שישארו רק קבצים נחוצים ושהכל יהיה בתיקיות הנכונות כדי שהקבצים ירוצו בלי בעיה
 </li>
-<li> Fix all #TODO in environment.yaml - Ive checked all versions of libraries with (lib_name.__version__) but had an error with the 2 that still has #TODO. try again tomorrow
+<li> <s> Fix all #TODO in environment.yaml - Ive checked all versions of libraries with (lib_name.__version__) but had an error with the 2 that still has #TODO. </s>  try again tomorrow
 </li>
 <li> Upload processed CSV files from the machine to GIT </li>
 <li> Upload Trained non-temporal models to GIT after training </li>
