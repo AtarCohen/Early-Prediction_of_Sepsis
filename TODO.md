@@ -20,7 +20,7 @@
 Exploration
 <ol> 
 <li>
-TemporalDataExploration.ipynb - לוודא הערות/תיעוד
+TemporalDataExploration.ipynb <s> comments </s>
 </li>
 <li>
 NonTemporalExploration.ipynb -  לוודא שמעודכן אחרי השינויים של עטר היום + הערות
@@ -30,7 +30,7 @@ NonTemporalExploration.ipynb -  לוודא שמעודכן אחרי השינוי�
 DataProcessing
 <ol>
 <li>
-PrepareData.ipynb (currently in /notebooks) - comments
+PrepareData.ipynb -<s>comments </s> 
 </li>
 <li>
 DataPreparators.py - <s>comments </s></li> 
