@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 plt.rc("font", size=14)
 from sklearn.linear_model import LogisticRegression
 from sklearn.impute import KNNImputer
-from imblearn.over_sampling import SMOTE  ##TODO: Insert to ENV.yml
+from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler
 import random
 import argparse
@@ -17,11 +17,11 @@ random.seed(seed)
 from xgboost import XGBClassifier
 # Import Random Forest Model
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import f1_score
 import pickle
 import wandb
 import joblib
 from copy import deepcopy
+from sklearn.metrics import f1_score, accuracy_score, recall_score,precision_score,roc_auc_score
 
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.reset_option('all')
@@ -29,6 +29,10 @@ pd.reset_option('all')
 
 class NotSerialModelsTrainer():
     def __init__(self,args):
+        """
+        :param args: all needed arguments for training a model or running feature selection
+        """
+        ## creating lists of different types of columns
         self.frequency_used_attributes = ['BaseExcess', 'FiO2', 'pH', 'PaCO2', 'Glucose', 'Lactate', 'PTT']
         self.freq_columns = ['BaseExcess', 'HCO3', 'FiO2', 'pH', 'PaCO2',
                              'SaO2', 'AST', 'BUN', 'Alkalinephos', 'Calcium', 'Chloride',
@@ -41,21 +45,29 @@ class NotSerialModelsTrainer():
         self.other_attributes = ['time_bm', 'HR', 'MAP', 'O2Sat', 'Resp', 'SBP', 'ICULOS']
         self.units_attributes = ['Unit1', 'Unit2']
         self.label_attributes = ['Label', 'SepsisLabel']
+
+        # processing and training arguments
         self.window_size = args.window_size
         self.time_bm = args.time_bm
         self.p_smote = args.over_sample_rate
         self.p_under = args.under_sample_rate
+
+        #preparing train dataframe
         self.train_df = self.preprocess(pd.read_csv(args.train_path))
         self.columns =  list(self.train_df.columns)
         self.columns.remove('Label')
         self.columns.remove('ID')
         self.method = args.selector_method
+
+        #imputer training/loading
         if args.impute:
             print('-'*10,'Training Imputer','-'*10)
             self.imputation_with_KNNimputer(path= args.impute_path)
         else:
             print('-'*10,'Loading Imputer','-'*10)
             self.knn_imp = joblib.load(args.impute_path)
+
+        ##creating dataframes
         self.X_train = pd.DataFrame(self.knn_imp.transform(self.train_df[self.columns]), columns=self.columns)
         self.y_train = self.train_df['Label'].values
         self.val_df = self.preprocess(pd.read_csv(args.validation_path))
@@ -64,6 +76,7 @@ class NotSerialModelsTrainer():
         self.test_df =self.preprocess(pd.read_csv(args.test_path))
         self.X_test = pd.DataFrame(self.knn_imp.transform(self.test_df[self.columns]), columns=self.columns)
         self.y_test=self.test_df['Label'].values
+
         self.res = {'Train': {}, 'Val': {}}
         self.model_name = args.model
         self.model_path = f'{self.model_name}_{args.run_id}'
@@ -71,6 +84,10 @@ class NotSerialModelsTrainer():
 
 
     def set_model(self):
+        """
+        sets chosen model
+        :return:
+        """
         if self.model_name == 'LR':
             self.model = LogisticRegression()
         elif self.model_name == 'RF':
@@ -83,6 +100,12 @@ class NotSerialModelsTrainer():
 
     # create frequency columns for some lab variables
     def add_rolling_window(self, df):
+        """
+        calculates "window" columns - For wach window_column, we calculate the number of non-null values in the
+        self.window (which is an int ) size.
+        :param df: datafrane to process
+        :return: dataframe with "window" columns added
+        """
         df = df.sort_values(by=['ID', 'ICULOS'], ascending=[True, True])
         rolling = df[['ID'] + self.frequency_used_attributes].groupby('ID').rolling(window=self.window_size,
                                                                                     closed='both').count()
@@ -92,6 +115,10 @@ class NotSerialModelsTrainer():
         return combined, rolling
 
     def calc_frequency(self, df):
+        """
+        :param df:
+        :return: dataframe with frequency columns for all self.freq_columns
+        """
         df = df.sort_values(by=['ID', 'ICULOS'], ascending=[True, True])
         rolling = df[['ID', 'ICULOS'] + self.freq_columns].groupby(by=['ID'])[
             self.freq_columns].expanding().count().reset_index().rename(columns={'level_1': 'old_index'})
@@ -105,6 +132,10 @@ class NotSerialModelsTrainer():
         return freq_df
 
     def preprocess(self, df):
+        """
+        :param df: df to process
+        :return: df with aggregations for models
+        """
         df, df_roll = self.add_rolling_window(df)
         freq_df = self.calc_frequency(df)
         frequency_used_attributes_fixed = [f'{self.window_size}w_sum_{x}' for x in self.frequency_used_attributes]
@@ -170,6 +201,11 @@ class NotSerialModelsTrainer():
         return data_final
 
     def imputation_with_KNNimputer(self, n=3, path=None):
+        """
+        :param n: number of neighbours
+        :param path: path to save imputer if given
+        :return:
+        """
         data_knn_imputed = self.train_df[self.columns].copy(deep=True)  # Copy the data
         self.knn_imp = KNNImputer(n_neighbors=n)  # Init the transformer
         self.knn_imp.fit(data_knn_imputed)
@@ -177,6 +213,11 @@ class NotSerialModelsTrainer():
             joblib.dump(self.knn_imp,path)
 
     def os_with_smote(self, X, y):
+        """
+        :param X: features
+        :param y: labels
+        :return: features and labels after oversampling using smote
+        """
         os = SMOTE(sampling_strategy=self.p_smote, random_state=0)
         columns = X.columns
         os_data_X, os_data_y = os.fit_resample(X, y)
@@ -186,6 +227,12 @@ class NotSerialModelsTrainer():
 
 
     def activate_selector(self, method='asc', columns = None):
+        """
+        starts the feature selection process
+        :param method:
+        :param columns: columns to use for feature selection
+        :return:
+        """
         self.method = method
         self.restart_selector(columns)
         if columns:
@@ -198,6 +245,11 @@ class NotSerialModelsTrainer():
 
 
     def restart_selector(self, columns=None):
+        """
+        restart selector between different models if needed, used when running selector for different models in 1 script
+        :param columns: columns for feature selection
+        :return:
+        """
         self.columns = list(self.train_df.columns)
         self.columns.remove('Label')
         self.columns.remove('ID')
@@ -212,6 +264,11 @@ class NotSerialModelsTrainer():
 
 
     def train_model(self,cols=None, save=False):
+        """
+        :param cols: features for the model to train on
+        :param save: whether to save model (used when training without selector)
+        :return:
+        """
         if not cols:
             cols=self.features
         X = self.X_train[cols]
@@ -227,16 +284,33 @@ class NotSerialModelsTrainer():
         y_train_pred= self.model.predict(X)
         return f1_score(y, y_train_pred)
 
-    def eval(self, cols, ds='val'):
+    def eval(self, cols, ds='val',print_res=False):
+        """
+        :param cols: model features
+        :param ds: dataset to eval
+        :return:
+        """
         random.seed(0)
         X = self.X_val[cols] if ds=='val' else self.X_test[cols]
         # X_val = self.X_val[cols]
         y_pred = self.model.predict(X)
         y = self.y_val if ds=='val' else self.y_test
         val = f1_score(y, y_pred)
+        if print_res:
+            print('F1 Score: ', val)
+            print('Accuracy Score: ', accuracy_score(y, y_pred))
+            print('Recall Score: ', recall_score(y, y_pred))
+            print('Precision Score: ', precision_score(y, y_pred))
+            print('roc_auc Score: ', roc_auc_score(y, y_pred))
         return val
 
+
     def feature_selection_asc(self):
+        """
+        runs iterative feature selection.
+        Each iteration we add the feature that maximize F1 on validation
+        :return:
+        """
         best_features = []
         best_f1 = -1
         f1_test_on_best=-1

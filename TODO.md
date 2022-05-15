@@ -39,7 +39,7 @@ DataPreparators.py - <s>comments </s></li>
 <li> Non Temporal Models
 <ol>
 <li>
-Feature_Selection_Not_Serial.py (maybe change its name) - comments
+Feature_Selection_Not_Serial.py (maybe change its name) - <s>comments </s>
 </li>
 <li>
 predict_ns.py (name need to change to predict.py assuming this will be our best model) -<s> comments </s>
@@ -51,11 +51,11 @@ predict_ns.py (name need to change to predict.py assuming this will be our best 
 <li> LSTM_Model.py - <s>comments </s> </li>
 <li> LSTM_main.py  <s>comments </s>  </li>
 <li> trainer.py  <s>comments </s> </li>
-<li>predict_LSTM.py - comments</li>
+<li>predict_LSTM.py - <s>comments </s> </li>
 <li>sweep.yaml? </li>
 </ol>
 </li>
-<li> Explain_Models.ipynb - comments </li>
+<li> Explain_Models.ipynb - <s>comments </s>  </li>
 <li> enivornment.yaml </li>
 <li> readme? </li>
 </ol>
