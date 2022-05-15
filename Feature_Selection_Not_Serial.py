@@ -369,7 +369,7 @@ def parsing():
     parser.add_argument('--project', default="Sepsis_Predictions", type=str)
 
     parser.add_argument('--model', choices=['RF','XGB','LR'], default='LR', type=str)
-    parser.add_argument('--mode', choices=['selector','trainer'], default='selector', type=str)
+    parser.add_argument('--mode', choices=['selector','trainer'], default='trainer', type=str)
     parser.add_argument('--selector_method', choices=['asc','dsc'], default='asc', type=str)
     parser.add_argument('--impute_path', default='knn_imputer', type=str)
     parser.add_argument('--impute', default=False, type=bool)
@@ -391,11 +391,12 @@ def parsing():
 args = parsing()
 trainer = NotSerialModelsTrainer(args)
 if args.mode=='trainer':
-    with open(f'Best_features_RF_run2.pickle', 'rb') as handle:
-        features = pickle.load(handle)
-    train_f1 = trainer.train_model(save=True, cols=features)
+    # with open(f'Best_features_RF_run2.pickle', 'rb') as handle:
+    #     features = pickle.load(handle)
+    features = trainer.columns
+    train_f1 = trainer.train_model(save=False, cols=features)
     print(f'Train F1 Score: {train_f1}')
-    print(f'Val F1 Score: {trainer.eval(cols=features, ds="val")}')
+    print(f'Val F1 Score: {trainer.eval(cols=features, ds="val", print_res=True)}')
 if args.mode=='selector':
     print('starting feature selector ',args.model)
     # columns= ['max_ICULOS', 'SOFA__max', 'Unit2__max', 'Unit3__max', 'HospAdmTime__mean', '5w_sum_BaseExcess__mean', '5w_sum_FiO2__mean', '5w_sum_pH__mean', '5w_sum_PaCO2__mean', '5w_sum_Glucose__mean', '5w_sum_Lactate__mean', '5w_sum_PTT__mean', 'freq_BaseExcess', 'freq_HCO3', 'freq_FiO2', 'freq_pH', 'freq_PaCO2', 'freq_SaO2', 'freq_AST', 'freq_BUN', 'freq_Alkalinephos', 'freq_Calcium', 'freq_Chloride', 'freq_Glucose', 'freq_Lactate', 'freq_Magnesium', 'freq_Phosphate', 'freq_Potassium', 'freq_Bilirubin_total', 'freq_Hct', 'freq_Hgb', 'freq_PTT', 'freq_WBC', 'freq_Fibrinogen']
