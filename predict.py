@@ -14,11 +14,10 @@ warnings.filterwarnings('ignore')
 
 if __name__ == "__main__":
 
-    # test_files= sys.argv[1] #getting directory path
-    # patients = os.listdir(test_files) # Files names list in the given directory
-    # test_df = create_patients_df(patients,test_files) # create dataframe
-    test_df = pd.read_csv('/home/student/filtered_test_df_0705.csv')
-    preprocessor= PreProcess(df=test_df, imputer_path='knn_imputer') #Preprocess the dataframe - aggregations and imputing
+    test_files= sys.argv[1] #getting directory path
+    patients = os.listdir(test_files) # Files names list in the given directory
+    test_df = create_patients_df(patients,test_files) # create dataframe
+    preprocessor= PreProcess(df=test_df, imputer_path='Trained Models/knn_imputer') #Preprocess the dataframe - aggregations and imputing
     model = joblib.load('/Trained Models/best_XGB_run3_43') #load model
     with open(f'/Trained Models/Best_features_dict_XGB_run_4.pickle', 'rb') as handle:
         features_dict = pickle.load(handle)
