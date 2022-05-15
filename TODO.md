@@ -42,7 +42,7 @@ DataPreparators.py - <s>comments </s></li>
 Feature_Selection_Not_Serial.py (maybe change its name) - comments
 </li>
 <li>
-predict_ns.py (name need to change to predict.py assuming this will be our best model) - comments
+predict_ns.py (name need to change to predict.py assuming this will be our best model) -<s> comments </s>
 </li>
 </ol>
 </li>
