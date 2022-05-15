@@ -33,7 +33,7 @@ DataProcessing
 PrepareData.ipynb (currently in /notebooks) - comments
 </li>
 <li>
-DataPreparators.py - comments</li> 
+DataPreparators.py - <s>comments </s></li> 
 </ol>
 </li>
 <li> Non Temporal Models
