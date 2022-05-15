@@ -15,13 +15,17 @@ warnings.filterwarnings('ignore')
 if __name__ == "__main__":
 
     test_files= sys.argv[1] #getting directory path
-    patients = os.listdir(test_files) # Files names list in the given directory
-    test_df = create_patients_df(patients,test_files) # create dataframe
+    patients_list = os.listdir(test_files) # Files names list in the given directory
+    test_df = create_patients_df(patients_list,test_files) # create dataframe
+    test_df.to_csv('test.csv',index=False)
+    del test_df
+    del patients_list
+    test_df = pd.read_csv('test.csv') # create dataframe
     preprocessor= PreProcess(df=test_df, imputer_path='Trained Models/knn_imputer') #Preprocess the dataframe - aggregations and imputing
-    model = joblib.load('/Trained Models/best_XGB_run3_43') #load model
-    with open(f'/Trained Models/Best_features_dict_XGB_run_4.pickle', 'rb') as handle:
+    model = joblib.load('Trained Models/best_XGB_run3_43') #load model
+    with open(f'Trained Models/Best_features_dict_XGB_run_4.pickle', 'rb') as handle:
         features_dict = pickle.load(handle)
-    features = features_dict[74]
+    features = features_dict[43]
     random.seed(0)
     y_pred = model.predict(preprocessor.X[features]) #predict
     ##calculate measures
