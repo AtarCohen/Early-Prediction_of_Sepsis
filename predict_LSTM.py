@@ -71,18 +71,20 @@ if __name__ == "__main__":
 
     # p = DataPreparator(columns=COLS, freq_columns=ALL_LAB_ATTR)
     # test_df = p.prepare_data(test_df) #process data for RNN models, including imputation
-    test_df = pd.read_csv('/home/student/filtered_test_df_0705_LSTM_new.csv')
-    test_patients = list(set(test_df.ID.values))
-    cols = list(test_df.columns)
-    cols.remove('Label')
-    cols.remove('ID')
-    ds = Dataset(test_patients, test_df, cols)
-    set_seed()
-    dl = DataLoader(ds, batch_size=64, collate_fn=collate_inputs)
-    model = RNN_Model(rnn_type='GRU', bidirectional=False, input_dim=35,
-                      hidden_dim=256, dropout=0.3922844934594849 , num_layers=3)
-    model.load_state_dict(torch.load('Trained Models/184.pth')['model_state'])
-    final_results = predict_and_eval(model,dl)
+    for type in ['val','test']:
+        print('*'*10,type,'*'*10)
+        test_df = pd.read_csv(f'/home/student/filtered_{type}_df_0705_LSTM_new.csv')
+        test_patients = list(set(test_df.ID.values))
+        cols = list(test_df.columns)
+        cols.remove('Label')
+        cols.remove('ID')
+        ds = Dataset(test_patients, test_df, cols)
+        set_seed()
+        dl = DataLoader(ds, batch_size=64, collate_fn=collate_inputs)
+        model = RNN_Model(rnn_type='GRU', bidirectional=False, input_dim=35,
+                          hidden_dim=64, dropout=0.21280943748172496 , num_layers=3)
+        model.load_state_dict(torch.load('Trained Models/191.pth')['model_state'])
+        final_results = predict_and_eval(model,dl)
     # final_results.to_csv('results_LSTM.csv', index=False)
 
 
