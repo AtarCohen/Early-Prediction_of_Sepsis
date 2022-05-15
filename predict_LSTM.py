@@ -79,7 +79,7 @@ if __name__ == "__main__":
     set_seed()
     dl = DataLoader(ds, batch_size=64, collate_fn=collate_inputs)
     model = RNN_Model(rnn_type='GRU', bidirectional=False, input_dim=35,
-                      hidden_dim=64, dropout=0.4407278586030113 , num_layers=3)
-    model.load_state_dict(torch.load('Trained Models/175.pth')['model_state'])
+                      hidden_dim=256, dropout=0.3922844934594849 , num_layers=3)
+    model.load_state_dict(torch.load('Trained Models/184.pth')['model_state'])
     final_results = predict_and_eval(model,dl)
     final_results.to_csv('predictions_LSTM.csv', index=False)

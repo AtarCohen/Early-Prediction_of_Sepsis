@@ -22,9 +22,9 @@ from sklearn.impute import IterativeImputer,SimpleImputer
 
 logger = logging.getLogger(__name__)
 Imputations = {}
-TRAIN_PATH = '/home/student/filtered_train_df_0705_LSTM_new.csv'
-VAL_PATH = '/home/student/filtered_val_df_0705_LSTM_new.csv'
-TEST_PATH = '/home/student/filtered_test_df_0705_LSTM_new.csv'
+TRAIN_PATH = 'DataFiles/filtered_train_df_0705_LSTM_new.csv'
+VAL_PATH = 'DataFiles/filtered_val_df_0705_LSTM_new.csv'
+TEST_PATH = 'DataFiles/filtered_test_df_0705_LSTM_new.csv'
 
 
 

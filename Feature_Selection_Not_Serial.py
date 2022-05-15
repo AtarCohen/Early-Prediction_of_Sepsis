@@ -368,18 +368,18 @@ class NotSerialModelsTrainer():
 
 def parsing():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--run_id',  default='XGB_81', type=str)
+    parser.add_argument('--run_id',  default='id', type=str)
     parser.add_argument('--wandb_mode', choices=['online', 'offline', 'disabled'], default='online', type=str)
     parser.add_argument('--project', default="Sepsis_Predictions", type=str)
 
     parser.add_argument('--model', choices=['RF','XGB','LR'], default='XGB', type=str)
     parser.add_argument('--mode', choices=['selector','trainer'], default='trainer', type=str)
     parser.add_argument('--selector_method', choices=['asc','dsc'], default='asc', type=str)
-    parser.add_argument('--impute_path', default='knn_imputer', type=str)
+    parser.add_argument('--impute_path', default='Trained Models/knn_imputer', type=str)
     parser.add_argument('--impute', default=False, type=bool)
-    parser.add_argument('--train_path', default="/home/student/filtered_train_df_0705.csv", type=str)
-    parser.add_argument('--validation_path', default= "/home/student/filtered_val_df_0705.csv", type=str)
-    parser.add_argument('--test_path', default= "/home/student/filtered_test_df_0705.csv", type=str)
+    parser.add_argument('--train_path', default="DataFiles/filtered_train_df_0705.csv", type=str)
+    parser.add_argument('--validation_path', default= "DataFiles/filtered_val_df_0705.csv", type=str)
+    parser.add_argument('--test_path', default= "DataFiles/filtered_test_df_0705.csv", type=str)
 
     parser.add_argument('--over_sample_rate', default='0.5', type=float)
     parser.add_argument('--under_sample_rate', default='0.5', type=float)
@@ -395,10 +395,10 @@ def parsing():
 args = parsing()
 trainer = NotSerialModelsTrainer(args)
 if args.mode=='trainer':
-    with open(f'Best_features_dict_XGB_run_4.pickle', 'rb') as handle:
+    with open(f'Trained Models/Best_features_dict_XGB_run_4.pickle', 'rb') as handle:
         features_dict = pickle.load(handle)
     features = features_dict[81]
-    train_f1 = trainer.train_model(save=True, cols=features)
+    train_f1 = trainer.train_model(save=False, cols=features)
     print('*'*10,'Validation Scores','*'*10)
     print(f'val F1 Score: {trainer.eval(cols=features, ds="val", print_res=True)}')
     print('*'*10,'Test Scores','*'*10)
